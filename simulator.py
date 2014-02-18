@@ -10,6 +10,7 @@ import logging
 class Swarm_AI():
 
 	logger = None
+	settings = None
 
 	def __init__(self):
 		self.setup_logger()
@@ -19,13 +20,16 @@ class Swarm_AI():
 	def get_modules(self):
 		# check if directory exists
 		if (not os.path.isdir('modules')):
-			logger.critical('Modules directory must exist in order to run.')
+			self.logger.critical('Modules directory must exist in order to run.')
 			exit(-1)
 
 		possible_modules = os.walk('modules').next()[1]
 		for mod in possible_modules:
-			logger.debug('Possible mod: {0}'.format(mod))
+			self.logger.debug('Possible mod: {0}'.format(mod))
 
+			if (os.path.exists(os.path.join('modules',mod,'module.info'))):
+				self.logger.debug('Mod: {0} has an info file.'.format(mod))
+				self.process_info(os.path.join('modules',mod,'module.info'))
 
 	# Most of this code was taken from: http://docs.python.org/2/howto/logging-cookbook.html
 	def setup_logger(self):
@@ -46,6 +50,22 @@ class Swarm_AI():
 		self.logger.addHandler(ch)
 
 		self.logger.debug('Logger setup.')
+
+	def process_info(self, path):
+		self.settings = {}
+
+		f = open(path, 'r')
+
+		for line in f:
+			if (not ":" in line):
+				self.logger.error("Line is not formatted correctly, must have a \":\" between key and value.")
+			else:
+				self.settings[line.split(":")[0].strip()] = line.split(":")[1].strip()
+				self.logger.debug("{0} has been added with value: {1}".format(line.split(":")[0].strip(),line.split(":")[1].strip()))
+
+		for key in ["name","author","version"]:
+			if not key in self.settings:
+				self.logger.error("{0} is required in the settings file.".format(key))
 
 if __name__ == '__main__':
 	simulation = Swarm_AI()
